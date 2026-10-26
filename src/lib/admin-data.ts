@@ -144,3 +144,90 @@ export async function getRatings() {
     readerName: names.get(rating.user_id) ?? "Reader",
   }));
 }
+
+export async function getPromptStudioData() {
+  const supabase = createAdminClient();
+  const [chains, steps, mixes] = await Promise.all([
+    supabase.from("prompt_chains").select("*").order("created_at", { ascending: false }),
+    supabase.from("prompt_chain_steps").select("*").order("position", { ascending: true }),
+    supabase.from("prompt_chain_mix").select("*").order("updated_at", { ascending: false }),
+  ]);
+
+  const error = chains.error ?? steps.error ?? mixes.error;
+  if (error) throw new Error(error.message);
+
+  return {
+    chains: chains.data ?? [],
+    steps: steps.data ?? [],
+    mixes: mixes.data ?? [],
+  };
+}
+
+export async function getTerms() {
+  const { data, error } = await createAdminClient()
+    .from("terms")
+    .select("*")
+    .order("term", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getObservabilityData() {
+  const supabase = createAdminClient();
+  const [requests, responses, authData] = await Promise.all([
+    supabase.from("generation_requests").select("*").order("created_at", { ascending: false }).limit(250),
+    supabase.from("llm_responses").select("*").order("created_at", { ascending: false }).limit(250),
+    supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+  ]);
+  const error = requests.error ?? responses.error ?? authData.error;
+  if (error) throw new Error(error.message);
+
+  const emails = new Map(authData.data.users.map((user) => [user.id, user.email ?? "Unknown user"]));
+  return {
+    requests: (requests.data ?? []).map((request) => ({
+      ...request,
+      email: emails.get(request.user_id) ?? "Unknown user",
+    })),
+    responses: responses.data ?? [],
+  };
+}
+
+export async function getExamples() {
+  const { data, error } = await createAdminClient()
+    .from("ai_generation_examples")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getModelCatalog() {
+  const supabase = createAdminClient();
+  const [providers, models] = await Promise.all([
+    supabase.from("llm_providers").select("*").order("name", { ascending: true }),
+    supabase.from("llm_models").select("*").order("name", { ascending: true }),
+  ]);
+  const error = providers.error ?? models.error;
+  if (error) throw new Error(error.message);
+  return { providers: providers.data ?? [], models: models.data ?? [] };
+}
+
+export async function getAccessRules() {
+  const supabase = createAdminClient();
+  const [domains, emails] = await Promise.all([
+    supabase.from("allowed_signup_domains").select("*").order("domain", { ascending: true }),
+    supabase.from("whitelisted_emails").select("*").order("email", { ascending: true }),
+  ]);
+  const error = domains.error ?? emails.error;
+  if (error) throw new Error(error.message);
+  return { domains: domains.data ?? [], emails: emails.data ?? [] };
+}
+
+export async function getAdminImages() {
+  const { data, error } = await createAdminClient()
+    .from("admin_images")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}

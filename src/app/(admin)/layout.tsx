@@ -15,8 +15,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
         <AdminNav />
         <div className="sidebar-foot">
-          <p>Protected workspace</p>
-          <span>Every mutation rechecks superadmin access.</span>
+          <p>Week 7 control room</p>
+          <span>Every route and mutation rechecks superadmin access.</span>
         </div>
       </aside>
       <div className="admin-main">
